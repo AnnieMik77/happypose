@@ -33,7 +33,7 @@ def xr_merge(ds1, ds2, on, how="left", dim1="dim_0", dim2="dim_0", fill_value=np
     df2["idx2"] = np.arange(len(df2))
 
     merge = df1.merge(df2, on=on, how=how)
-    assert len(merge) == ds1.dims[dim1]
+    assert len(merge) == ds1.sizes[dim1]
 
     idx1 = merge["idx1"].values
     idx2 = merge["idx2"].values

@@ -58,21 +58,21 @@ class MultiviewPredictionRunner:
                 batch_im_id += 1
                 frame_info = obs["frame_info"]
                 im_info = {
-                    k: frame_info[k] for k in ("scene_id", "view_id", "group_id")
+                    k: getattr(frame_info, k) for k in ("scene_id", "view_id", "group_id")
                 }
                 im_info.update(batch_im_id=batch_im_id)
                 cam_info = im_info.copy()
 
-                K.append(obs["camera"]["K"])
+                K.append(obs["camera"].K)
                 cam_infos.append(cam_info)
 
                 for _o, obj in enumerate(obs["objects"]):
                     obj_info = {
-                        "label": obj["name"],
+                        "label": obj.label,
                         "score": 1.0,
                     }
                     obj_info.update(im_info)
-                    bboxes.append(obj["bbox"])
+                    bboxes.append(obj.bbox_modal)
                     det_infos.append(obj_info)
 
         gt_detections = tc.PandasTensorCollection(
@@ -148,7 +148,7 @@ class MultiviewPredictionRunner:
             if len(detections_) > 0:
                 data_TCO_init = detections_ if use_detections_TCO else None
                 detections__ = detections_ if not use_detections_TCO else None
-                candidates, sv_preds = pose_predictor.get_predictions(
+                candidates, sv_preds = pose_predictor.run_inference_pipeline(
                     images,
                     cameras.K,
                     detections=detections__,

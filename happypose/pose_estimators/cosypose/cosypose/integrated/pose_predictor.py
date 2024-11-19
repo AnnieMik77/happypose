@@ -59,11 +59,11 @@ class CoarseRefinePosePredictor(PoseEstimationModule):
                 infos = obj_inputs.infos
                 batch_preds = tc.PandasTensorCollection(
                     infos,
-                    poses=iter_outputs["TCO_output"],
-                    poses_input=iter_outputs["TCO_input"],
-                    K_crop=iter_outputs["K_crop"],
-                    boxes_rend=iter_outputs["boxes_rend"],
-                    boxes_crop=iter_outputs["boxes_crop"],
+                    poses=iter_outputs.TCO_output,
+                    poses_input=iter_outputs.TCO_input,
+                    K_crop=iter_outputs.K_crop,
+                    boxes_rend=iter_outputs.boxes_rend,
+                    boxes_crop=iter_outputs.boxes_crop,
                 )
                 preds[f"iteration={n}"].append(batch_preds)
 

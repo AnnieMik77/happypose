@@ -40,9 +40,9 @@ class MultiViewWrapper(SceneDatasetWrapper):
         rgbs, masks, obss = [], [], []
         for ds_id in ds_ids:
             rgb, mask, obs = self.scene_ds[ds_id]
-            rgbs.append(rgb)
-            masks.append(mask)
-            obs["frame_info"]["group_id"] = row["group_id"]
+            rgbs.append(torch.from_numpy(rgb))
+            masks.append(torch.from_numpy(np.asarray(mask)))
+            obs["frame_info"].group_id = row["group_id"]
             obss.append(obs)
 
         rgbs = torch.stack(rgbs)

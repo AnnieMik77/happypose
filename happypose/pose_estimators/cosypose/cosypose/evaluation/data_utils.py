@@ -10,18 +10,18 @@ from happypose.toolbox.lib3d.transform_ops import invert_transform_matrices
 def parse_obs_data(obs):
     data = defaultdict(list)
     frame_info = obs["frame_info"]
-    TWC = torch.as_tensor(obs["camera"]["TWC"]).float()
+    TWC = torch.as_tensor(obs["camera"].TWC.matrix).float()
     for n, obj in enumerate(obs["objects"]):
         info = {
             "frame_obj_id": n,
-            "label": obj["name"],
-            "visib_fract": obj.get("visib_fract", 1),
-            "scene_id": frame_info["scene_id"],
-            "view_id": frame_info["view_id"],
+            "label": obj.label,
+            "visib_fract": obj.visib_fract,
+            "scene_id": frame_info.scene_id,
+            "view_id": frame_info.view_id,
         }
         data["infos"].append(info)
-        data["TWO"].append(obj["TWO"])
-        data["bboxes"].append(obj["bbox"])
+        data["TWO"].append(obj.TWO.matrix)
+        data["bboxes"].append(obj.bbox_modal)
 
     for k, v in data.items():
         if k != "infos":

@@ -171,6 +171,7 @@ class BulletBatchRenderer:
             rgbs = torch.stack(list_rgbs).pin_memory().cuda(non_blocking=True)
         else:
             rgbs = torch.stack(list_rgbs)
+        rgbs = rgbs.squeeze(1)
         rgbs = rgbs.float().permute(0, 3, 1, 2) / 255
 
         depths = None
