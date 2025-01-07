@@ -67,6 +67,7 @@ def make_scene_dataset(
     ds_name: str,
     load_depth: bool = False,
     n_frames: Optional[int] = None,
+    n_scenes: Optional[int] = None,
 ) -> SceneDataset:
     # BOP challenge splits
     if ds_name == "hb.bop19":
@@ -244,7 +245,19 @@ def make_scene_dataset(
         raise ValueError(ds_name)
 
     ds.load_depth = load_depth
-    if n_frames is not None:
+
+    if n_scenes is not None:
+        assert ds.frame_index is not None
+        scene_ids = ds.frame_index['scene_id'].drop_duplicates().head(n_scenes)
+        ds.frame_index = ds.frame_index[ds.frame_index['scene_id'].isin(scene_ids)]
+        if n_frames is not None:
+            ds.frame_index = (
+                ds.frame_index.groupby('scene_id')
+                .head(n_frames)
+                .reset_index(drop=True)
+            )
+
+    elif n_frames is not None:
         assert ds.frame_index is not None
         ds.frame_index = ds.frame_index.iloc[:n_frames].reset_index(drop=True)
     return ds

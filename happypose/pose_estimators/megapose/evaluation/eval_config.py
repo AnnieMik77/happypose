@@ -101,3 +101,26 @@ class BOPEvalConfig:
     detection_method: Optional[str] = None
     convert_only: bool = False
     use_post_score: Optional[bool] = True
+
+@dataclass
+class MultiviewConfig:
+    single_view_pred_path: str
+    single_view_method_name: str
+    result_id: str
+    ds_name: str
+    save_dir: Optional[str] = None # Will be filled in by the script
+
+    # Multi-view
+    n_views: int = 4
+    batch_size: int = 1
+    skip_inference: bool = False
+    run_bop_eval: bool = True
+
+    # Infos, TODO: solve the paralellization
+    n_workers: int = 0
+    hardware: HardwareConfig = field(default_factory=HardwareConfig)
+
+    # Debug
+    debug: bool = False
+    n_scenes: Optional[int] = None
+    n_frames: Optional[int] = None
