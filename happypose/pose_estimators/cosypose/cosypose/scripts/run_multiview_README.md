@@ -12,9 +12,7 @@ todo: specify their format
 2. 
 specify params of your experiment:
 "single_view_pred_path=~/multiview_proj/mock_data_dir/results/ycbv-debug/ycbv.bop19/downloaded/foundpose_ycbv-test_733a8c68-39a4-4e6d-bb4d-8bfa8110ccba.csv",
-"single_view_method_name=found_pose",
 "ds_name=ycbv",
-"result_id=multiview-debug",
 "debug=False",
 
 more params are in the config file

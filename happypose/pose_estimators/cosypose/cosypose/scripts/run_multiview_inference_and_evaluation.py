@@ -6,7 +6,8 @@
 
 """
 
-# Loading singlepose csvs
+# Loading singlepose csvs 
+# TODO: this import is here only to get correct version of some c++ library
 from happypose.pose_estimators.cosypose.cosypose.multiview_refactor.model_loader import (
     load_models
 )
@@ -21,6 +22,7 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.multiprocessing
+import datetime
 
 # Third Party
 from omegaconf import OmegaConf
@@ -68,7 +70,10 @@ from happypose.pose_estimators.megapose.config import (
     RESULTS_DIR,
 )
 from happypose.pose_estimators.megapose.evaluation.runner_utils import format_results
-from happypose.pose_estimators.megapose.evaluation.bop import run_evaluation
+from happypose.pose_estimators.megapose.evaluation.bop import ( 
+    convert_results_to_bop,
+    _run_bop_evaluation
+)
 from happypose.pose_estimators.megapose.evaluation.eval_config import (
     BOPEvalConfig,
     EvalConfig,
@@ -103,9 +108,7 @@ def update_cfg_debug(cfg: EvalConfig) -> FullEvalConfig:
     cfg.batch_size = 1
     cfg.n_frames = cfg.n_views
     cfg.n_scenes = cfg.batch_size * cfg.hardware.n_gpus
-
-    assert cfg.result_id is not None
-    cfg.save_dir = str(DEBUG_RESULTS_DIR / cfg.result_id)
+    cfg.save_dir = DEBUG_RESULTS_DIR
     return cfg
 
 
@@ -119,8 +122,12 @@ def load_poses_csv(ds_name, path_to_csv = None):
     
     Returns: 
         all_dets (tc.PandasTensorCollection): The poses as a TensorCollection.
+        method (str): The method used to generate the poses.
     """
     assert path_to_csv is not None
+    assert Path(path_to_csv).is_file(), f"The file {path_to_csv} doesn't exist"
+
+    method = path_to_csv.split("/")[-1].split("_")[0]
 
     # Load the poses
     dets = inout.load_bop_results(path_to_csv)
@@ -146,7 +153,7 @@ def load_poses_csv(ds_name, path_to_csv = None):
         poses=poses,
     )
 
-    return all_dets
+    return method, all_dets
  
 def run_multiview_inference(args):
     assert args.n_views > 2
@@ -169,11 +176,12 @@ def run_multiview_inference(args):
     mesh_db = MeshDataBase.from_object_ds(object_ds)
 
     # Load singleview predictions from a file:
-    pose_predictions = load_poses_csv(ds_name_short, path_to_csv=args.single_view_pred_path)
+    method, pose_predictions = load_poses_csv(ds_name_short, path_to_csv=args.single_view_pred_path)
 
     # save key
-    save_key = cfg.single_view_method_name + "_multiview" + f"_nviews={args.n_views}"
-    args.save_dir = str(Path(args.save_dir) / save_key)
+    hash_of_run = np.random.randint(0, 1000000)
+    args.result_id = method + f"_multiview_nviews={args.n_views}_{str(hash_of_run)}"
+    args.save_dir = str(Path(args.save_dir) / args.result_id  /cfg.ds_name)
 
     # Create the multiview dataset
     scene_ds_multi = MultiViewWrapper(scene_ds, n_views=args.n_views)
@@ -209,11 +217,11 @@ def run_multiview_inference(args):
 
     # Save the results
     if get_rank() == 0:
-        results_path = args.save_dir / "results.pth.tar"
+        results_path = Path(args.save_dir)/ "results.pth.tar"
         assert args.save_dir is not None
         save_dir = Path(args.save_dir)
         save_dir.mkdir(exist_ok=True, parents=True)
-        logger.info(f"Finished inference on {args.ds_name}, setting={save_key}")
+        logger.info(f"Finished inference on {args.ds_name}, setting={args.result_id}")
         results = format_results(all_preds, {}, {})
         torch.save(results, results_path)
         torch.save(results.get("summary"), save_dir / "summary.pth.tar")
@@ -244,7 +252,6 @@ def main(cfg: MultiviewConfig) -> None:
 
     # Create the correct config for dataset
     cfg.ds_name = BOP_CONFIG[cfg.ds_name]["inference_ds_name"][0]
-    cfg.save_dir = Path(cfg.save_dir) / cfg.ds_name
 
     # Run multiview inference
     # Note that the results get saved to disk
@@ -254,9 +261,8 @@ def main(cfg: MultiviewConfig) -> None:
     else:  
         # Otherwise load the previously inferenced output
         if get_rank() == 0:
-            save_key = cfg.single_view_method_name + f"multiview_nviews={cfg.n_views}"
-
-            results_dir = Path(cfg.save_dir) / save_key
+            assert cfg.result_id is not None, "result_id must be set"
+            results_dir = Path(cfg.save_dir) / cfg.result_id / cfg.ds_name
             pred_keys = ["multiview"]
             eval_out = {
                 "results_path": results_dir / "results.pth.tar",
@@ -288,11 +294,15 @@ def main(cfg: MultiviewConfig) -> None:
             )
             bop_eval_cfgs.append(bop_eval_cfg)
 
-    # Run the bop eval for each config
-    if get_rank() == 0:
-        if cfg.run_bop_eval:
-            for bop_eval_cfg in bop_eval_cfgs:
-                run_evaluation(bop_eval_cfg)
+        # Run the bop eval
+        for bop_eval_cfg in bop_eval_cfgs:
+            results_path=Path(eval_out["results_path"])
+            method = cfg.result_id.replace("/", "-")
+            method = method.replace("_", "-")
+            csv_path = bop_eval_cfg.eval_dir / f"{method}_{bop_eval_cfg.dataset.split('.')[0]}-{bop_eval_cfg.split}.csv"
+            
+            convert_results_to_bop(results_path, csv_path, bop_eval_cfg.method, use_pose_score=False)
+            _run_bop_evaluation(csv_path, bop_eval_cfg.eval_dir, eval_detection=False)           
 
     logger.info(f"Process {get_rank()} reached end of script")
 
@@ -313,12 +323,15 @@ if __name__ == "__main__":
     cfg = OmegaConf.merge(cfg, cli_cfg)
 
     # Verify that the config is valid
-    assert cfg.single_view_pred_path is not None
-    assert cfg.single_view_method_name is not None
-    assert cfg.result_id is not None
+    if not cfg.skip_inference:
+        assert cfg.single_view_pred_path is not None
+        assert cfg.n_views is not None
+    else:
+        assert cfg.result_id is not None
+
     assert cfg.ds_name is not None
 
-    cfg.save_dir = RESULTS_DIR / cfg.result_id
+    cfg.save_dir = RESULTS_DIR
 
     # TODO: really work on debug mode
     if cfg.debug:

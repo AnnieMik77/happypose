@@ -105,9 +105,8 @@ class BOPEvalConfig:
 @dataclass
 class MultiviewConfig:
     single_view_pred_path: str
-    single_view_method_name: str
-    result_id: str
     ds_name: str
+    result_id: Optional[str] = None
     save_dir: Optional[str] = None # Will be filled in by the script
 
     # Multi-view
