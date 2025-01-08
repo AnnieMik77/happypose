@@ -65,10 +65,6 @@ from happypose.pose_estimators.cosypose.cosypose.lib3d.cosypose_ops import (
 )
 
 # MegaPose
-from happypose.pose_estimators.megapose.config import (
-    DEBUG_RESULTS_DIR,
-    RESULTS_DIR,
-)
 from happypose.pose_estimators.megapose.evaluation.runner_utils import format_results
 from happypose.pose_estimators.megapose.evaluation.bop import ( 
     convert_results_to_bop,
@@ -195,11 +191,12 @@ def run_multiview_inference(args):
         n_workers=args.n_workers
     )
     mv_predictor = MultiviewScenePredictor(mesh_db)
-    pred_kwargs = {
-                    "pose_predictions": pose_predictions,
-                    "mv_predictor": mv_predictor,
-                }
-    all_preds = pred_runner.get_predictions(**pred_kwargs)
+
+    all_preds = pred_runner.get_predictions(
+        pose_predictions=pose_predictions,
+        mv_predictor=mv_predictor,
+        use_known_camera_poses=args.use_known_camera_poses,
+    )
 
     logger.info(f"Done with inference on ds={args.ds_name}")
     logger.info(f"Predictions: {all_preds.keys()}")

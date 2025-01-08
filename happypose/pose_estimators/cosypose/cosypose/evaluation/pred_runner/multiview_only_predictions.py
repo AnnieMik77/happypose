@@ -98,6 +98,7 @@ class MultiviewRunner:
         self,
         pose_predictions=None,
         mv_predictor=None,
+        use_known_camera_poses=False,
     ):
         predictions = defaultdict(list)
         for n, data in enumerate(tqdm(self.dataloader)):
@@ -141,11 +142,12 @@ class MultiviewRunner:
                 mv_preds = mv_predictor.predict_scene_state(
                     batch_predictions,
                     cameras,
+                    use_known_camera_poses=use_known_camera_poses,
                 )
-                # tady uz je spatne poradi mimo jine
 
                 all_preds = {}
 
+                # tady uz je spatne poradi mimo jine
                 # # Here I will log the inconsistencies between cand inputs and ba_output
                 # ba_output_detected_objects = mv_preds["ba_output"].infos["label"].unique()
                 # cand_inputs_detected_objects = mv_preds["cand_inputs"].infos["label"].unique()

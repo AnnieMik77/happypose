@@ -114,6 +114,7 @@ class MultiviewConfig:
     batch_size: int = 1
     skip_inference: bool = False
     run_bop_eval: bool = True
+    use_known_camera_poses: bool = False
 
     # Infos, TODO: solve the paralellization
     n_workers: int = 0
