@@ -136,7 +136,6 @@ class MultiviewRunner:
                 # 1 for all detections
                 batch_predictions.infos["group_id"] = im_infos[0]["group_id"]
 
-
                 # put batch_predictions on GPU
                 batch_predictions = batch_predictions.cuda()
                 mv_preds = mv_predictor.predict_scene_state(
@@ -146,25 +145,6 @@ class MultiviewRunner:
                 )
 
                 all_preds = {}
-
-                # tady uz je spatne poradi mimo jine
-                # # Here I will log the inconsistencies between cand inputs and ba_output
-                # ba_output_detected_objects = mv_preds["ba_output"].infos["label"].unique()
-                # cand_inputs_detected_objects = mv_preds["cand_inputs"].infos["label"].unique()
-
-                # # check if contain the same strings,  different order is ok
-                # if not set(ba_output_detected_objects) == set(cand_inputs_detected_objects):
-                #     with open (f"mv_preds_inconsistencies.txt", "a") as f:
-                #         f.write(f"Output    :{mv_preds['ba_output'].infos['scene_id'].unique()}: {ba_output_detected_objects}\n")
-                #         f.write(f"Candidates:{mv_preds['ba_output'].infos['scene_id'].unique()}: {cand_inputs_detected_objects}\n")
-
-
-
-                # # save mv_preds to a file without pickling
-                # with open(f"mv_preds.txt", "a") as f:
-                #     f.write(str(mv_preds["cand_inputs"]))
-                #     f.write(str(mv_preds["ba_output"]))
-                    
                 all_preds["multiview"] = mv_preds["ba_output+all_cand"]
                 return all_preds
 
@@ -177,7 +157,6 @@ class MultiviewRunner:
             for k, v in all_preds.items():
                 v.infos = v.infos.loc[:, ["scene_id", "view_id",  "label", "score"]]
                 predictions[k].append(v.cpu())
-            # predictions["detections"].append(this_batch_detections.cpu())
 
         predictions = dict(predictions)
         for k, v in predictions.items():

@@ -27,7 +27,7 @@ import datetime
 # Third Party
 from omegaconf import OmegaConf
 
-# TODO: Bop workaround, remove when env is fixed
+# TODO: bop workaround, remove when env is fixed
 import bop_toolkit_lib
 bop_toolkit_path = Path(bop_toolkit_lib.__file__).parent
 project_bop_path = Path("bop_toolkit_lib")
@@ -183,7 +183,7 @@ def run_multiview_inference(args):
     scene_ds_multi = MultiViewWrapper(scene_ds, n_views=args.n_views)
 
     # Run the multiview inference
-    # TODO: solve parallelization without n_workers
+    # TODO: Do something about parallelization
     pred_runner = MultiviewRunner(
         scene_ds_multi,
         batch_size=args.batch_size,
@@ -330,7 +330,7 @@ if __name__ == "__main__":
 
     cfg.save_dir = RESULTS_DIR
 
-    # TODO: really work on debug mode
+    # TODO: work on debug mode
     if cfg.debug:
         cfg = update_cfg_debug(cfg)
 

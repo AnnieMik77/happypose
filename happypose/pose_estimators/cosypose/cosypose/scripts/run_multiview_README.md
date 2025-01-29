@@ -1,32 +1,31 @@
 # Multiview pose estimation
+Run cosypose multiview on a csv file containing estimated poses from BOP leaderboard.
+Will run multiview algorithm and BOP evaluation. 
 
-## Instal dependencies
-TODO
+## Install dependencies
+Should be the same as for cosypose
 
 ## Run multiview for single view poses:
+0. `export HAPPYPOSE_DATA_DIR=/somewhere/convenient`
+1. Download the single view predictions `csv` from BOP Leaderboard.
 
-1. download the single view predictions or predict them
-format should be csv
-todo: specify their format
-
-2. 
-specify params of your experiment:
-"single_view_pred_path=~/multiview_proj/mock_data_dir/results/ycbv-debug/ycbv.bop19/downloaded/foundpose_ycbv-test_733a8c68-39a4-4e6d-bb4d-8bfa8110ccba.csv",
-"ds_name=ycbv",
-"debug=False",
-
-more params are in the config file
-
+2. Parameters:\
+`./happypose/pose_estimators/megapose/evaluation/eval_config/` contains list of optional params in `MultiviewConfig` class
 
 3. run the script:
-/local2/homes/mikesann/multiview_proj/happypose_fork/happypose/happypose/pose_estimators/cosypose/cosypose/scripts/run_multiview_inference_and_evaluation.py
+```
+python ./happypose/pose_estimators/cosypose/cosypose/scripts/run_multiview_inference_and_evaluation.py \
+single_view_pred_path=path/to/csv/method_ycbv-test_hash.csv  \
+ds_name=ycbv \
+debug=False \
+use_known_camera_poses=True
+```
 
 
 ## TODO:
-from happypose.pose_estimators.cosypose.cosypose.evaluation.pred_runner.multiview_only_predictions import MultiviewRunner
--> clean up this pred runner.
-play with dependencies and fix them
-multiprocessing and running on gpu maybe isn't working
-add fixed camera poses
-learn visualization of the resutls
+- work on logger and debug mode
+- work on workers/parallelization
+- cean up pred runner: from happypose.pose_estimators.cosypose.cosypose.evaluation.pred_runner.multiview_only_predictions import MultiviewRunner
+- track dependencies and fix them
+- logging when ransac fails for known poses
 
