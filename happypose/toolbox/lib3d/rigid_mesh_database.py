@@ -115,6 +115,7 @@ class MeshDataBase:
             # QUESTION (lmanuelli): Is this used anywhere?
             new_infos[label]["n_points"] = points_n.shape[0]
             new_infos[label]["n_sym"] = symmetries_n.shape[0]
+            new_infos[label]["diameter_m"] = mesh_obj.diameter_meters
 
             symmetries.append(torch.as_tensor(symmetries_n))
             points.append(torch.as_tensor(points_n))

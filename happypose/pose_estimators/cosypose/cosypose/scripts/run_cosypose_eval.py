@@ -1,7 +1,7 @@
 # ruff: noqa: E402
-from happypose.pose_estimators.cosypose.cosypose.utils.tqdm import patch_tqdm
+# from happypose.pose_estimators.cosypose.cosypose.utils.tqdm import patch_tqdm
 
-patch_tqdm()
+# patch_tqdm()
 import argparse
 import json
 import logging
@@ -45,9 +45,9 @@ from happypose.pose_estimators.cosypose.cosypose.integrated.multiview_predictor 
 from happypose.pose_estimators.cosypose.cosypose.integrated.pose_predictor import (
     CoarseRefinePosePredictor,
 )
-from happypose.pose_estimators.cosypose.cosypose.lib3d.rigid_mesh_database import (
-    MeshDataBase,
-)
+
+from happypose.toolbox.lib3d.rigid_mesh_database import MeshDataBase
+
 from happypose.pose_estimators.cosypose.cosypose.training.pose_models_cfg import (
     load_model_cosypose,
 )
@@ -207,7 +207,8 @@ def get_pose_meters(scene_ds, ds_name):
         object_ds_name = "tless.eval"
     elif "ycbv" in ds_name:
         # This is important for definition of symmetric objects
-        object_ds_name = "ycbv.bop-compat.eval"
+        # TODO: investigate if this change is correct
+        object_ds_name = "ycbv"
     else:
         raise ValueError
 
@@ -281,19 +282,23 @@ def get_pose_meters(scene_ds, ds_name):
 
 
 def load_models(coarse_run_id, refiner_run_id=None, n_workers=8, object_set="tless"):
+    # TODO: verify this
     if object_set == "tless":
-        object_ds_name, urdf_ds_name = "tless.bop", "tless.cad"
+        ds_name_short, object_ds_name, urdf_ds_name = "tless", "tless.bop19", "tless.cad"
     else:
-        object_ds_name, urdf_ds_name = "ycbv.bop-compat.eval", "ycbv"
+        ds_name_short, object_ds_name, urdf_ds_name = "ycbv", "ycbv.bop-compat.eval", "ycbv"
 
-    object_ds = make_object_dataset(object_ds_name)
+    object_ds = make_object_dataset(ds_name_short)
     mesh_db = MeshDataBase.from_object_ds(object_ds)
-    renderer = BulletBatchRenderer(object_set=urdf_ds_name, n_workers=n_workers)
+    renderer = BulletBatchRenderer(object_ds, n_workers=n_workers)
     mesh_db_batched = mesh_db.batched().cuda()
 
-    coarse_model = load_model_cosypose(
-        EXP_DIR / coarse_run_id, renderer, mesh_db_batched, device
-    )
+    if coarse_run_id is None:
+        coarse_model = None
+    else:
+        coarse_model = load_model_cosypose(
+            EXP_DIR / coarse_run_id, renderer, mesh_db_batched, device
+        )
     refiner_model = load_model_cosypose(
         EXP_DIR / refiner_run_id, renderer, mesh_db_batched, device
     )
@@ -344,7 +349,7 @@ def main():
         n_refiner_iterations = 4
     elif "ycbv" in args.config:
         object_set = "ycbv"
-        refiner_run_id = "ycbv-refiner-finetune--251020"
+        refiner_run_id="ycbv-refiner-finetune--251020"
         n_coarse_iterations = 0
         n_refiner_iterations = 2
     else:
@@ -355,8 +360,11 @@ def main():
         assert n_views == 1
     elif args.config == "tless-vivo":
         ds_name = "tless.primesense.test.bop19"
+    elif args.config == "tless.bop19":
+        ds_name = "tless.bop19"
     elif args.config == "ycbv":
-        ds_name = "ycbv.test.keyframes"
+        #TODO: verify change from this: ds_name = "ycbv.test.keyframes"
+        ds_name = "ycbv.bop19"
     else:
         raise ValueError(args.config)
 
@@ -483,7 +491,7 @@ def main():
     )
 
     # Evaluation.
-    meters = get_pose_meters(scene_ds)
+    meters = get_pose_meters(scene_ds, ds_name)
     mv_group_ids = list(iter(pred_runner.sampler))
     scene_ds_ids = np.concatenate(
         scene_ds_pred.frame_index.loc[mv_group_ids, "scene_ds_ids"].values,
@@ -605,7 +613,7 @@ def main():
 
 
 if __name__ == "__main__":
-    patch_tqdm()
+    # patch_tqdm()
     main()
     time.sleep(2)
     if get_world_size() > 1:

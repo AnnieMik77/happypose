@@ -14,9 +14,9 @@ from .symmetries import make_bop_symmetries
 
 class MeshDataBase:
     def __init__(self, obj_list):
-        self.infos = {obj["label"]: obj for obj in obj_list}
+        self.infos = {obj.label: obj for obj in obj_list}
         self.meshes = {
-            m: trimesh.load(obj["mesh_path"]) for m, obj in self.infos.items()
+            m: trimesh.load(obj.mesh_path) for m, obj in self.infos.items()
         }
 
     @staticmethod
@@ -43,18 +43,17 @@ class MeshDataBase:
                 points_n = torch.tensor(mesh.vertices)
             points_n = points_n.clone()
             infos = self.infos[label]
-            if infos["mesh_units"] == "mm":
+            if infos.mesh_units == "mm":
                 scale = 0.001
-            elif infos["mesh_units"] == "m":
+            elif infos.mesh_units == "m":
                 scale = 1.0
             else:
                 msg = "Unit not supported"
-                raise ValueError(msg, infos["mesh_units"])
+                raise ValueError(msg, infos.mesh_units)
             points_n *= scale
 
             dict_symmetries = {
-                k: infos.get(k, [])
-                for k in ("symmetries_discrete", "symmetries_continuous")
+                k: getattr(infos, k, []) for k in ("symmetries_discrete", "symmetries_continuous")
             }
             symmetries_n = make_bop_symmetries(
                 dict_symmetries,

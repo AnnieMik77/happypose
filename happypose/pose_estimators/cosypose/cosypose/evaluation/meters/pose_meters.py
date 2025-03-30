@@ -79,7 +79,7 @@ class PoseErrorMeter(Meter):
         elif self.error_type.upper() == "ADD(-S)":
             ids_nosym, ids_sym = [], []
             for n, label in enumerate(labels):
-                if self.mesh_db.infos[label]["is_symmetric"]:
+                if self.mesh_db.infos[label]["n_sym"] > 1:
                     ids_sym.append(n)
                 else:
                     ids_nosym.append(n)
@@ -264,7 +264,7 @@ class PoseErrorMeter(Meter):
             [self.mesh_db.infos[k.item()]["diameter_m"] for k in matches["label"]],
         )
         matches["norm"] = "match_id", errors_norm
-        matches["0.1d"] = "match_id", errors_norm < 0.1 * matches["obj_diameter"]
+        matches["0.1d"] = "match_id", errors_norm < 0.1 * matches["obj_diameter"].data
         matches["xyz"] = ("match_id", "dim3"), errors_xyz
         matches["TCO_xyz"] = ("match_id", "dim3"), errors_TCO_xyz
         matches["TCO_norm"] = "match_id", errors_TCO_norm
@@ -306,7 +306,7 @@ class PoseErrorMeter(Meter):
             dim2="match_id",
             fill_value=fill_values,
         )
-        preds["0.1d"] = "pred_id", preds_match_merge["0.1d"]
+        preds["0.1d"] = "pred_id", preds_match_merge["0.1d"].data
 
         self.datas["gt_df"].append(gt)
         self.datas["pred_df"].append(preds)
@@ -371,7 +371,7 @@ class PoseErrorMeter(Meter):
 
         df = pred_df[["label", valid_k, "score"]].to_dataframe().set_index(["label"])
         for label, label_n_gt in n_gts.items():
-            if df.index.contains(label):
+            if label in df.index:
                 label_df = df.loc[[label]]
                 if label_df[valid_k].sum() > 0:
                     ap, label_df = compute_ap(label_df, label_n_gt)
