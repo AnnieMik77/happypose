@@ -258,7 +258,7 @@ def main(cfg: MultiviewConfig) -> None:
         if get_rank() == 0:
             assert cfg.result_id is not None, "result_id must be set"
             results_dir = Path(cfg.save_dir) / cfg.result_id / cfg.ds_name
-            pred_keys = ["multiview"]
+            pred_keys = ["ba_output"]
             eval_out = {
                 "results_path": results_dir / "results.pth.tar",
                 "pred_keys": pred_keys,
@@ -271,7 +271,7 @@ def main(cfg: MultiviewConfig) -> None:
 
     # Run the bop eval for each type of prediction
     if cfg.run_bop_eval and get_rank() == 0:
-        bop_eval_keys = {"multiview"}
+        bop_eval_keys = {"ba_output"}
         bop_eval_keys = bop_eval_keys.intersection(set(eval_out["pred_keys"]))
 
         for method in bop_eval_keys:

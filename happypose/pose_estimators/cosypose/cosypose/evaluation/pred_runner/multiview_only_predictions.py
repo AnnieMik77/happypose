@@ -105,9 +105,16 @@ class MultiviewRunner:
             images = data["images"].cuda().float().permute(0, 3, 1, 2) / 255
             cameras = data["cameras"].cuda().float()
             im_infos = data["im_infos"]
-
+            im_infos_pd = pd.DataFrame(im_infos)
             # logger.debug(f"{'-'*80}")
             # logger.debug(f"Predictions on {data['im_infos']}")
+            scene_id = np.unique(im_infos_pd["scene_id"])
+            view_ids = np.unique(im_infos_pd["view_id"])
+            group_id = np.unique(im_infos_pd["group_id"])
+            logger.debug(f"{'-'*80}")
+            logger.debug(f"Scene: {scene_id}")
+            logger.debug(f"Views: {view_ids}")
+            logger.debug(f"Group: {group_id}")
 
             def get_preds():
                 torch.cuda.synchronize()
@@ -143,10 +150,9 @@ class MultiviewRunner:
                     cameras,
                     use_known_camera_poses=use_known_camera_poses,
                 )
-
-                all_preds = {}
-                all_preds["multiview"] = mv_preds["ba_output+all_cand"]
-                return all_preds
+                
+                mv_preds["multiview"] = mv_preds["ba_output+all_cand"]
+                return mv_preds
 
             # Run once without measuring timing
             if n == 0:
@@ -155,7 +161,7 @@ class MultiviewRunner:
 
             # NOTE: time isn't correct for n iterations < max number of iterations
             for k, v in all_preds.items():
-                v.infos = v.infos.loc[:, ["scene_id", "view_id",  "label", "score"]]
+                # v.infos = v.infos.loc[:, ["scene_id", "view_id",  "label", "score"]]
                 predictions[k].append(v.cpu())
 
         predictions = dict(predictions)
