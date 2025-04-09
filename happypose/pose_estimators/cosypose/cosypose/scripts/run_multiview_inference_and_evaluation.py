@@ -152,7 +152,6 @@ def load_poses_csv(ds_name, path_to_csv = None):
     return method, all_dets
  
 def run_multiview_inference(args):
-    assert args.n_views > 2
     logger.info(f"{'-'*80}")
     for k, v in args.__dict__.items():
         logger.info(f"{k}: {v}")
@@ -183,7 +182,6 @@ def run_multiview_inference(args):
     scene_ds_multi = MultiViewWrapper(scene_ds, n_views=args.n_views)
 
     # Run the multiview inference
-    # TODO: Do something about parallelization
     pred_runner = MultiviewRunner(
         scene_ds_multi,
         batch_size=args.batch_size,

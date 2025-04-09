@@ -319,7 +319,7 @@ def main():
     init_distributed_mode()
 
     parser = argparse.ArgumentParser("Evaluation")
-    parser.add_argument("--config", default="tless-bop", type=str)
+    parser.add_argument("--config", default="tless.bop19", type=str)
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--job_dir", default="", type=str)
     parser.add_argument("--comment", default="", type=str)
