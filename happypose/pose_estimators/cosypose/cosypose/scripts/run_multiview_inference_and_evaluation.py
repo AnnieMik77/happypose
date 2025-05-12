@@ -6,32 +6,20 @@
 
 """
 
-# Loading singlepose csvs 
-# TODO: this import is here only to get correct version of some c++ library
-from happypose.pose_estimators.cosypose.cosypose.multiview_refactor.model_loader import (
-    load_models
-)
-import happypose.pose_estimators.cosypose.cosypose.utils.tensor_collection as tc
-from bop_toolkit_lib import inout  # noqa
+# Torch
+import torch
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 # Standard Library
 import os
 from pathlib import Path
 import pandas as pd
-
 import numpy as np
-import torch
 
 # Third Party
 from omegaconf import OmegaConf
-
-# TODO: bop workaround, remove when env is fixed
-import bop_toolkit_lib
-bop_toolkit_path = Path(bop_toolkit_lib.__file__).parent
-project_bop_path = Path("bop_toolkit_lib")
-if not project_bop_path.exists():
-    # Create symlink
-    os.symlink(bop_toolkit_path, project_bop_path)
+from bop_toolkit_lib import inout
 
 # Configs
 from happypose.pose_estimators.megapose.bop_config import BOP_CONFIG
@@ -46,6 +34,7 @@ from happypose.toolbox.datasets.datasets_cfg import (
     make_scene_dataset,
 )
 from happypose.toolbox.lib3d.rigid_mesh_database import MeshDataBase
+import happypose.pose_estimators.cosypose.cosypose.utils.tensor_collection as tc
 
 # Multiview inference
 from happypose.pose_estimators.cosypose.cosypose.datasets.wrappers.multiview_wrapper import (
@@ -77,8 +66,6 @@ from happypose.pose_estimators.megapose.evaluation.evaluation import (
 # logging
 from happypose.toolbox.utils.logging import get_logger, set_logging_level
 
-# torch.backends.cudnn.deterministic = True
-# torch.backends.cudnn.benchmark = False
 
 logger = get_logger(__name__)
 
@@ -292,5 +279,4 @@ if __name__ == "__main__":
     # TODO: work on debug mode
     if cfg.debug:
         cfg = update_cfg_debug(cfg)
-
     main(cfg)
