@@ -11,11 +11,6 @@ import happypose.pose_estimators.cosypose.cosypose.utils.tensor_collection as tc
 from happypose.pose_estimators.cosypose.cosypose.datasets.samplers import (
     DistributedSceneSampler,
 )
-from happypose.pose_estimators.cosypose.cosypose.utils.distributed import (
-    get_rank,
-    get_tmp_dir,
-    get_world_size,
-)
 from happypose.pose_estimators.cosypose.cosypose.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -23,22 +18,17 @@ logger = get_logger(__name__)
 
 
 class MultiviewRunner:
-    def __init__(self, scene_ds, batch_size=1, cache_data=False, n_workers=4):
-        self.rank = get_rank()
-        self.world_size = get_world_size()
-        self.tmp_dir = get_tmp_dir()
-
+    def __init__(self, scene_ds, batch_size=1, cache_data=False):
         assert batch_size == 1
         sampler = DistributedSceneSampler(
             scene_ds,
-            num_replicas=self.world_size,
-            rank=self.rank,
+            num_replicas=1,
+            rank=0
         )
         self.sampler = sampler
         dataloader = DataLoader(
             scene_ds,
             batch_size=batch_size,
-            num_workers=n_workers,
             sampler=sampler,
             collate_fn=self.collate_fn,
         )

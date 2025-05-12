@@ -35,8 +35,8 @@ class MultiViewWrapper(SceneDatasetWrapper):
             self.frame_index = pd.DataFrame(self.frame_index)
             self.frame_index["group_id"] = np.arange(len(self.frame_index))
             self.scene_ds = scene_ds
-            # self.init_from_file(scene_ds, "multiview_wrapper.json")
-            self.to_file(f"ycbv_views_{n_views}.json")
+            dataset_name = scene_ds.ds_dir.split("/")[-1]
+            self.to_file(f"view_groups_{n_views}_multiview_{dataset_name}.json")
         else:
             self.init_from_file(scene_ds, "ycbv_views_mapping_for_martin.json")
 

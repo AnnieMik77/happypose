@@ -21,8 +21,6 @@ import pandas as pd
 
 import numpy as np
 import torch
-import torch.multiprocessing
-import datetime
 
 # Third Party
 from omegaconf import OmegaConf
@@ -58,12 +56,6 @@ from happypose.pose_estimators.cosypose.cosypose.integrated.multiview_predictor 
     MultiviewScenePredictor,
 )
 
-# TODO: this might be useful when using camera poses
-from happypose.pose_estimators.cosypose.cosypose.lib3d.cosypose_ops import (
-    TCO_init_from_boxes,
-    TCO_init_from_boxes_zup_autodepth,
-)
-
 # MegaPose
 from happypose.pose_estimators.megapose.evaluation.runner_utils import format_results
 from happypose.pose_estimators.megapose.evaluation.bop import ( 
@@ -82,16 +74,9 @@ from happypose.pose_estimators.megapose.evaluation.evaluation import (
     get_save_dir,
 )
 
-# Distributed
-from happypose.toolbox.utils.distributed import (
-    get_rank,
-    get_tmp_dir,
-    get_world_size,
-    init_distributed_mode,
-)
+# logging
 from happypose.toolbox.utils.logging import get_logger, set_logging_level
 
-# torch.multiprocessing.set_sharing_strategy("file_system")
 # torch.backends.cudnn.deterministic = True
 # torch.backends.cudnn.benchmark = False
 
@@ -103,7 +88,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def update_cfg_debug(cfg: EvalConfig) -> FullEvalConfig:
     cfg.batch_size = 1
     cfg.n_frames = cfg.n_views
-    cfg.n_scenes = cfg.batch_size * cfg.hardware.n_gpus
+    cfg.n_scenes = cfg.batch_size
     cfg.save_dir = DEBUG_RESULTS_DIR
     return cfg
 
@@ -153,7 +138,7 @@ def load_poses_csv(ds_name, path_to_csv = None):
  
 def run_multiview_inference(args):
     logger.info(f"{'-'*80}")
-    for k, v in args.__dict__.items():
+    for k, v in dict(args).items():
         logger.info(f"{k}: {v}")
     logger.info(f"{'-'*80}")
 
@@ -186,7 +171,6 @@ def run_multiview_inference(args):
         scene_ds_multi,
         batch_size=args.batch_size,
         cache_data=False,
-        n_workers=args.n_workers
     )
     mv_predictor = MultiviewScenePredictor(mesh_db)
 
@@ -200,84 +184,64 @@ def run_multiview_inference(args):
     logger.info(f"Predictions: {all_preds.keys()}")
 
 
-    # Gather predictions from different processes
-    logger.info("Waiting on barrier.")
-    torch.distributed.barrier()
-    logger.info("Gathering predictions from all processes.")
+    # Gather predictions to cpu
     for k, v in all_preds.items():
-        all_preds[k] = v.gather_distributed(tmp_dir=get_tmp_dir()).cpu()
+        all_preds[k] = v.cpu()
     
-    torch.distributed.barrier()
-    logger.info("Finished gathering predictions from all processes.")
 
     # Save the results
-    if get_rank() == 0:
-        results_path = Path(args.save_dir)/ "results.pth.tar"
-        assert args.save_dir is not None
-        save_dir = Path(args.save_dir)
-        save_dir.mkdir(exist_ok=True, parents=True)
-        logger.info(f"Finished inference on {args.ds_name}, setting={args.result_id}")
-        results = format_results(all_preds, {}, {})
-        torch.save(results, results_path)
-        torch.save(results.get("summary"), save_dir / "summary.pth.tar")
-        torch.save(results.get("predictions"), save_dir / "predictions.pth.tar")
-        torch.save(results.get("dfs"), save_dir / "error_dfs.pth.tar")
-        torch.save(results.get("metrics"), save_dir / "metrics.pth.tar")
-        (save_dir / "summary.txt").write_text(results.get("summary_txt", ""))
-        (save_dir / "config.yaml").write_text(OmegaConf.to_yaml(cfg))
-        logger.info(f"Saved predictions+metrics in {save_dir}")
+    assert args.save_dir is not None
+    save_dir = Path(args.save_dir)
+    save_dir.mkdir(exist_ok=True, parents=True)
 
-        return {
-            "results": results,
-            "pred_keys": list(all_preds.keys()),
-            "save_dir": save_dir,
-            "results_path": results_path,
-        }
+    logger.info(f"Finished inference on {args.ds_name}, setting={args.result_id}")
+    results = format_results(all_preds, {}, {})
 
-    else:
-        return None
+    # Save the results all together:
+    results_path = Path(save_dir)/ "results.pth.tar"
+    torch.save(results, results_path)
+    (save_dir / "config.yaml").write_text(OmegaConf.to_yaml(cfg))
+    logger.info(f"Saved results in {save_dir}")
 
+    return {
+        "pred_keys": list(all_preds.keys()),
+        "save_dir": save_dir,
+        "results_path": results_path,
+    }
 
 
 def main(cfg: MultiviewConfig) -> None:
     bop_eval_cfgs = []
 
-    init_distributed_mode()
-    print("World size", get_world_size())
-
     # Create the correct config for dataset
     cfg.ds_name = BOP_CONFIG[cfg.ds_name]["inference_ds_name"][0]
-
-    # Run multiview inference
-    # Note that the results get saved to disk
+    
+    # Get the inference results
     if not cfg.skip_inference:
+        # Run multiview inference, the results get saved to disk
         eval_out = run_multiview_inference(cfg)
-
     else:  
         # Otherwise load the previously inferenced output
-        if get_rank() == 0:
-            assert cfg.result_id is not None, "result_id must be set"
-            results_dir = Path(cfg.save_dir) / cfg.result_id / cfg.ds_name
-            pred_keys = ["ba_output"]
-            eval_out = {
-                "results_path": results_dir / "results.pth.tar",
-                "pred_keys": pred_keys,
-                "save_dir": results_dir,
-            }
+        assert cfg.result_id is not None, "Set result_id to load the results"
+        results_dir = Path(cfg.save_dir) / cfg.result_id / cfg.ds_name
+        pred_keys = ["ba_output"] # TODO: load from predictions
+        eval_out = {
+            "pred_keys": pred_keys,
+            "save_dir": results_dir,
+            "results_path": results_dir / "results.pth.tar",
+        }
 
-            assert Path(
-                eval_out["results_path"],
-            ).is_file(), f"The file {eval_out['results_path']} doesn't exist"
+        assert Path(
+            eval_out["results_path"],
+        ).is_file(), f"The file {eval_out['results_path']} doesn't exist"
 
-    # Run the bop eval for each type of prediction
-    if cfg.run_bop_eval and get_rank() == 0:
+    # Run the bop eval for some types of predictions
+    if cfg.run_bop_eval:
+        # eval only output of cosypose
         bop_eval_keys = {"ba_output"}
         bop_eval_keys = bop_eval_keys.intersection(set(eval_out["pred_keys"]))
 
         for method in bop_eval_keys:
-            if "bop19" not in cfg.ds_name:
-                continue
-
             bop_eval_cfg = BOPEvalConfig(
                 results_path=eval_out["results_path"],
                 dataset=cfg.ds_name,
@@ -291,18 +255,19 @@ def main(cfg: MultiviewConfig) -> None:
 
         # Run the bop eval
         for bop_eval_cfg in bop_eval_cfgs:
-            results_path=Path(eval_out["results_path"])
-            method = cfg.result_id.replace("/", "-")
-            method = method.replace("_", "-")
-            csv_path = bop_eval_cfg.eval_dir / f"{method}_{bop_eval_cfg.dataset.split('.')[0]}-{bop_eval_cfg.split}.csv"
+            results_path = bop_eval_cfg.results_path
+
+            pose_method = cfg.result_id.replace("/", "-")
+            pose_method = pose_method.replace("_", "-")
+            dataset = bop_eval_cfg.dataset.split(".")[0]
+            csv_path = bop_eval_cfg.eval_dir / f"{pose_method}-{bop_eval_cfg.method}_{dataset}-{bop_eval_cfg.split}.csv"
             
             convert_results_to_bop(results_path, csv_path, bop_eval_cfg.method, use_pose_score=False)
             _run_bop_evaluation(csv_path, bop_eval_cfg.eval_dir, eval_detection=False)           
 
-    logger.info(f"Process {get_rank()} reached end of script")
 
 if __name__ == "__main__":
-    print("Running eval")
+    # TODO: logs are shown twice
     set_logging_level("debug")
 
     # Load config
@@ -310,11 +275,6 @@ if __name__ == "__main__":
     logger.info(f"CLI config: \n {OmegaConf.to_yaml(cli_cfg)}")
 
     cfg: MultiviewConfig = OmegaConf.structured(MultiviewConfig)
-    cfg.hardware = HardwareConfig(
-        n_cpus=int(os.environ.get("N_CPUS", 10)),
-        n_gpus=int(os.environ.get("WORLD_SIZE", 1)),
-    )
-
     cfg = OmegaConf.merge(cfg, cli_cfg)
 
     # Verify that the config is valid
@@ -332,5 +292,4 @@ if __name__ == "__main__":
     if cfg.debug:
         cfg = update_cfg_debug(cfg)
 
-    print(cfg)
     main(cfg)

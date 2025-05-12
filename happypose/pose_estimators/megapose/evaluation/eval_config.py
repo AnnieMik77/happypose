@@ -116,10 +116,6 @@ class MultiviewConfig:
     run_bop_eval: bool = True
     use_known_camera_poses: bool = False
 
-    # Infos, TODO: solve the paralellization
-    n_workers: int = 0
-    hardware: HardwareConfig = field(default_factory=HardwareConfig)
-
     # Debug
     debug: bool = False
     n_scenes: Optional[int] = None
