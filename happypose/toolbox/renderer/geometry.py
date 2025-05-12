@@ -34,14 +34,14 @@ from panda3d.core import (
 
 __all__ = (
     "make_axes",
-    "make_grid",
-    "make_cylinder",
     "make_box",
+    "make_cylinder",
+    "make_grid",
     "make_plane",
-    "make_sphere",
     "make_points",
+    "make_sphere",
 )
-__all__ = ("ViewerError", "ViewerClosedError")
+__all__ = ("ViewerClosedError", "ViewerError")
 
 
 class ViewerError(Exception):

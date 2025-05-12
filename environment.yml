@@ -1,4 +1,4 @@
-#name: happypose_torch2
+name: happypose
 channels:
    - conda-forge
    - pytorch
@@ -6,7 +6,7 @@ channels:
    - anaconda
    - defaults
 dependencies:
-  - pytorch-cuda==12.1
+  - pytorch-cuda==12.4
   - pip
   - pytorch
   - torchvision

@@ -1,9 +1,15 @@
 name: Tests with conda
 
-on: [ push, pull_request ]
+on:
+  push:
+    branches:
+    - dev
+  pull_request:
+    branches:
+    - dev
 
 jobs:
-  test:
+  conda:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -18,16 +24,13 @@ jobs:
       - name: Install EGL mesa - required for Panda3D renderer
         run: |
           sudo apt-get update -y -qq
-          sudo apt-get install -y -qq libegl1-mesa libegl1-mesa-dev
+          sudo apt-get install -y -qq libegl1-mesa-dev
 
       - name: Setup conda
         uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: happypose
           python-version: ${{ matrix.python-version }}
-          miniforge-variant: Mambaforge
-          miniforge-version: latest
-          use-mamba: true
 
       - name: Get date for caching, reset cache every day
         id: get-date
@@ -48,11 +51,11 @@ jobs:
         id: cache
 
       - name: Update conda environment with happypose dependencies
-        run: mamba env update -n happypose -f environment.yml
+        run: conda env update -n happypose -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Install happypose
-        run: pip install -e .[multiview]
+        run: pip install -r requirements/base.txt
 
       - name: Download pre-trained models required for tests
         run: |
@@ -68,5 +71,8 @@ jobs:
 
       - name: Run tests
         run: |
+          set -x
           python -m unittest
-          pytest tests -v
+          for test in tests/test_*.py; do
+            grep -q pytest $test && pytest tests -v $test
+          done

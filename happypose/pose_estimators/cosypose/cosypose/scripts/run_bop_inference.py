@@ -83,7 +83,7 @@ def load_detector(run_id):
     cfg = check_update_config_detector(cfg)
     label_to_category_id = cfg.label_to_category_id
     model = create_model_detector(cfg, len(label_to_category_id))
-    ckpt = torch.load(run_dir / "checkpoint.pth.tar")
+    ckpt = torch.load(run_dir / "checkpoint.pth.tar", weights_only=True)
     ckpt = ckpt["state_dict"]
     model.load_state_dict(ckpt)
     model = model.cuda().eval()
@@ -117,10 +117,10 @@ def load_pose_models(coarse_run_id, refiner_run_id=None, n_workers=8):
 
 
 def run_inference(args):
-    logger.info(f"{'-'*80}")
+    logger.info(f"{'-' * 80}")
     for k, v in args.__dict__.items():
         logger.info(f"{k}: {v}")
-    logger.info(f"{'-'*80}")
+    logger.info(f"{'-' * 80}")
 
     scene_ds = make_scene_dataset(args.ds_name, n_frames=args.n_frames)
 

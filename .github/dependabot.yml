@@ -7,7 +7,4 @@ updates:
   schedule:
       interval: "monthly"
 
-- package-ecosystem: "pip"
-  directory: "/"
-  schedule:
-      interval: "monthly"
+# TODO: uv.lock not yet in https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/dependency-graph-supported-package-ecosystems

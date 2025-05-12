@@ -1,0 +1,15 @@
+pull_request_rules:
+  - name: merge automatically bot PR when CI pass
+    conditions:
+      - check-success = "conda (3.10)"
+      - check-success = "conda (3.12)"
+      - check-success = "pip (3.10)"
+      - check-success = "pip (3.12)"
+      - check-success = "uv (3.10)"
+      - check-success = "uv (3.12)"
+      - check-success = "pre-commit.ci - pr"
+      - or:
+        - author = pre-commit-ci[bot]
+        - author = dependabot[bot]
+    actions:
+      merge:

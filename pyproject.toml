@@ -1,6 +1,85 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools"]
+
+[dependency-groups]
+dev = [
+  "coverage[toml]>=7.6.4",
+  "pre-commit>=4.0.1",
+  "ruff>=0.2.1"
+]
+docs = [
+  "myst-parser>=4.0.0",
+  "sphinx>=8.1.3"
+]
+
+[project]
+authors = [
+  {name = "Elliot Maître"},
+  {name = "Yann Labbé"}
+]
+classifiers = ["License :: OSI Approved :: BSD License"]
+dependencies = [
+  "addict>=2.4.0",
+  "beautifulsoup4>=4.12.3",
+  "bokeh>=3.6.0",
+  "bop-toolkit-lib",
+  "cosypose",
+  "httpx>=0.25.0",
+  "imageio>=2.36.0",
+  "ipython>=8.29.0",
+  "joblib>=1.4.2",
+  "meshcat>=0.3.2",
+  "omegaconf>=2.3.0",
+  "panda3d>=1.10.14",
+  "plyfile>=1.1",
+  "pybind11>=2.13.6",
+  "pybullet>=3.2.6",
+  "pypng>=0.20220715.0",
+  "pytest-order>=1.3.0",
+  "pytest>=8.3.3",
+  "pyyaml>=6.0.2",
+  "roma>=1.5.0",
+  "scikit-image>=0.22.0",
+  "scikit-learn>=1.5.2",
+  "scipy>=1.14.1",
+  "seaborn>=0.12.2",
+  "selenium>=4.25.0",
+  "simplejson>=3.19.3",
+  "torchnet>=0.0.4",
+  "torchtnt>=0.2.4",
+  "tqdm>=4.66.5",
+  "transforms3d>=0.4.1",
+  "trimesh>=4.5.1",
+  "webdataset>=0.2.57",
+  "xarray>=2024.10.0"
+]
+description = "Toolbox and trackers for object pose-estimation"
+maintainers = [
+  {email = "guilhem.saurel@laas.fr", name = "Guilhem Saurel"}
+]
+name = "happypose"
+readme = "README.md"
+requires-python = ">=3.10"
+version = "0.1.0"
+
+[project.optional-dependencies]
+cpu = [
+  "torch>=2.5.1",
+  "torchvision>=0.20.1"
+]
+cu124 = [
+  "torch>=2.5.1",
+  "torchvision>=0.20.1"
+]
+evaluation = ["cmeel-teaser-plusplus>=2.0"]
+pypi = [
+  "opencv-contrib-python>=4.10.0",
+  "pin>=2.7"
+]
+
+[project.urls]
+changelog = "https://github.com/agimus-project/happypose/blob/main/CHANGELOG.md"
 
 [tool.coverage.run]
 omit = ["cosypose", "megapose6d"]
@@ -12,78 +91,6 @@ exclude = ["cosypose", "megapose6d"]
 ignore_missing_imports = true
 module = "pybullet"
 
-[tool.poetry]
-authors = ["Elliot Maître", "Yann Labbé"]
-description = "Toolbox and trackers for object pose-estimation"
-license = "BSD-2-Clause"
-name = "happypose"
-readme = "README.md"
-version = "0.1.0"
-
-[tool.poetry.dependencies]
-addict = "^2.4.0"
-beautifulsoup4 = "^4.12.3"
-bokeh = "^3.6.0"
-bop_toolkit_lib = {git = "https://github.com/agimus-project/bop_toolkit"}
-cmeel-teaser-plusplus = {optional = true, version = "^2.0"}
-cosypose = {optional = true, path = "happypose/pose_estimators/cosypose"}
-httpx = "^0.25.0"
-imageio = "^2.36.0"
-ipython = "^8.29.0"
-joblib = "^1.4.2"
-meshcat = "^0.3.2"
-omegaconf = "^2.3.0"
-opencv-contrib-python = {optional = true, version = "^4.10.0.84"}
-opencv-python = {optional = true, version = "^4.10.0.84"}
-panda3d = "^1.10.14"
-pin = {optional = true, version = "^2.7.0"}
-plyfile = "^1.1"
-pybind11 = "^2.13.6"
-pybullet = "^3.2.6"
-pypng = "^0.20220715.0"
-pytest = "^8.3.3"
-python = ">=3.10,<3.13"
-pyyaml = "^6.0.2"
-roma = "^1.5.0"
-scikit-image = "^0.22.0"
-scikit-learn = "^1.5.2"
-scipy = "^1.14.1"
-seaborn = "^0.12.2"
-selenium = "^4.25.0"
-simplejson = "^3.19.3"
-torch = {optional = true, version = "^2.5.0"}
-torchnet = {optional = true, version = "^0.0.4"}
-torchtnt = {optional = true, version = "^0.2.4"}
-torchvision = {optional = true, version = "^0.20"}
-tqdm = "^4.66.5"
-transforms3d = "^0.4.1"
-trimesh = "^4.5.1"
-webdataset = "^0.2.57"
-xarray = "^2024.10.0"
-
-[tool.poetry.extras]
-evaluation = ["cmeel-teaser-plusplus"]
-multiview = ["cosypose"]
-pypi = ["opencv-contrib-python", "opencv-python", "pin", "torch", "torchnet", "torchtnt", "torchvision"]
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-coverage = {extras = ["toml"], version = "^7.6.4"}
-pre-commit = "^4.0.1"
-ruff = "^0.2.1"
-
-[tool.poetry.group.docs]
-optional = true
-
-[tool.poetry.group.docs.dependencies]
-myst-parser = "^4.0.0"
-sphinx = "^8.1.3"
-
-[tool.poetry.urls]
-changelog = "https://github.com/agimus-project/happypose/blob/main/CHANGELOG.md"
-
 [tool.ruff]
 extend-exclude = ["*.ipynb", "deps"]
 target-version = "py310"
@@ -92,5 +99,56 @@ target-version = "py310"
 extend-ignore = ["D203", "D213"]
 extend-select = ["I", "RUF", "W"]
 
+[tool.setuptools]
+packages = ["happypose"]
+
 [tool.tomlsort]
 all = true
+
+[tool.uv]
+conflicts = [
+  [
+    {extra = "cpu"},
+    {extra = "cu124"}
+  ]
+]
+dependency-metadata = [
+  {name = "torchnet", requires-dist = ["six", "visdom"]},
+  {name = "torchtnt", requires-dist = [
+    "fsspec",
+    "numpy",
+    "packaging",
+    "psutil",
+    "pyre-extensions",
+    "setuptools",
+    "tabulate",
+    "tensorboard",
+    "tqdm",
+    "typing-extensions"
+  ]}
+]
+
+[[tool.uv.index]]
+explicit = true
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+
+[[tool.uv.index]]
+explicit = true
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+
+[tool.uv.sources]
+bop-toolkit-lib = {git = "https://github.com/agimus-project/bop_toolkit"}
+cosypose = {workspace = true}
+torch = [
+  {extra = "cpu", index = "pytorch-cpu", marker = "platform_system != 'Darwin'"},
+  {extra = "cu124", index = "pytorch-cu124"}
+]
+torchvision = [
+  {extra = "cpu", index = "pytorch-cpu", marker = "platform_system != 'Darwin'"},
+  {extra = "cu124", index = "pytorch-cu124"}
+]
+
+[tool.uv.workspace]
+members = ["happypose/pose_estimators/cosypose"]

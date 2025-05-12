@@ -4,3 +4,20 @@ requires = [
   "pybind11>=2.10.0",
   "setuptools>=42"
 ]
+
+[project]
+authors = [
+  {name = "Yann Labbé"}
+]
+classifiers = ["License :: OSI Approved :: BSD License"]
+description = "CosyPose C extension"
+maintainers = [
+  {email = "guilhem.saurel@laas.fr", name = "Guilhem Saurel"}
+]
+name = "cosypose"
+readme = "README.md"
+requires-python = ">=3.10"
+version = "1.0.0"
+
+[tool.setuptools]
+packages = ["cosypose"]

@@ -129,10 +129,10 @@ def train_detector(args):
     args = check_update_config(args)
     args.save_dir = EXP_DIR / args.run_id
 
-    logger.info(f"{'-'*80}")
+    logger.info(f"{'-' * 80}")
     for k, v in args.__dict__.items():
         logger.info(f"{k}: {v}")
-    logger.info(f"{'-'*80}")
+    logger.info(f"{'-' * 80}")
     # Initialize distributed
     device = torch.cuda.current_device()
     init_distributed_mode()
@@ -218,7 +218,7 @@ def train_detector(args):
         resume_dir = EXP_DIR / args.resume_run_id
         path = resume_dir / "checkpoint.pth.tar"
         logger.info(f"Loading checkpoing from {path}")
-        save = torch.load(path)
+        save = torch.load(path, weights_only=True)
         state_dict = save["state_dict"]
         model.load_state_dict(state_dict)
         start_epoch = save["epoch"] + 1
