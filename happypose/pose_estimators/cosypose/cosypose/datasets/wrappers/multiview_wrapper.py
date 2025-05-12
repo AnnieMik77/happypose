@@ -2,12 +2,15 @@ import numpy as np
 import pandas as pd
 import torch
 import json
-
+import os
 from .base import SceneDatasetWrapper
 
 
 class MultiViewWrapper(SceneDatasetWrapper):  
     def __init__(self, scene_ds, n_views=4, mode="random"):
+        self.n_views = n_views
+        self.ds_name = scene_ds.ds_dir.name
+        self.scene_ds = scene_ds
         if mode == "random":
             n_max_views = n_views
             frame_index = scene_ds.frame_index.copy().reset_index(drop=True)
@@ -34,9 +37,6 @@ class MultiViewWrapper(SceneDatasetWrapper):
 
             self.frame_index = pd.DataFrame(self.frame_index)
             self.frame_index["group_id"] = np.arange(len(self.frame_index))
-            self.scene_ds = scene_ds
-            dataset_name = scene_ds.ds_dir.split("/")[-1]
-            self.to_file(f"view_groups_{n_views}_multiview_{dataset_name}.json")
         else:
             self.init_from_file(scene_ds, "ycbv_views_mapping_for_martin.json")
 
@@ -60,7 +60,6 @@ class MultiViewWrapper(SceneDatasetWrapper):
         return len(self.frame_index)
     
     def init_from_file(self, scene_ds, file_path):
-        self.scene_ds = scene_ds
         view_info = json.load(open(file_path))
         frame_index = pd.DataFrame(view_info)
         # add empty column for "scene_ds_ids"
@@ -88,7 +87,9 @@ class MultiViewWrapper(SceneDatasetWrapper):
         return self
 
 
-    def to_file(self, file_path):
+    def to_file(self, folder_name):
+        file_name = f"view_groups_{self.n_views}_multiview_{self.ds_name}.json"
+        file_path = os.path.join(folder_name, file_name)
         view_info = self.frame_index.to_dict(orient="records")
         # for each "scene_ds_ids" remove this column
         for v in view_info:

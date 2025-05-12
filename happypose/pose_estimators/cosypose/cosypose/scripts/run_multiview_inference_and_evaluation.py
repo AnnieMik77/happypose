@@ -201,6 +201,7 @@ def run_multiview_inference(args):
     results_path = Path(save_dir)/ "results.pth.tar"
     torch.save(results, results_path)
     (save_dir / "config.yaml").write_text(OmegaConf.to_yaml(cfg))
+    scene_ds_multi.to_file(folder_name=save_dir)
     logger.info(f"Saved results in {save_dir}")
 
     return {
